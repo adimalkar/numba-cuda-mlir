@@ -1788,6 +1788,9 @@ def constant(
         # This is useful for converting literals to the appropriate type.
         case ir.Value(), t if t is None:
             return value
+        case int() | float(), ir.IntegerType() if ty.width == 1:
+            # An i1 holds truthiness: 2 and 0.5 are true, but their low bit is 0.
+            return arith.constant(ty, value=bool(value))
         case int(), ir.IntegerType():
             return arith.constant(ty, value=value)
         case int(), ir.IndexType():

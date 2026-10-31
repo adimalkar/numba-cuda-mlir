@@ -21,6 +21,11 @@ CONSTANTS.F32 = NP_F32
 CONSTANTS.I8 = NP_I8
 CONSTANTS.TRUE = NP_TRUE
 CONSTANTS.C64 = NP_C64
+CONSTANTS.PY_TWO = 2
+CONSTANTS.NP_TWO = np.int32(2)
+CONSTANTS.PY_HALF = 0.5
+CONSTANTS.NP_HALF = np.float32(0.5)
+CONSTANTS.NP_ZERO = np.float32(0.0)
 
 
 def test_np_bool_global_in_branch():
@@ -90,6 +95,20 @@ def test_np_scalar_module_attributes():
     k[1, 1](out, cout)
     np.testing.assert_allclose(out.copy_to_host(), [6.0, 7.0, 8.0, 1.0])
     np.testing.assert_array_equal(cout.copy_to_host(), [3.0 - 1.5j])
+
+
+def test_numeric_module_attributes_as_conditions():
+    @cuda.jit
+    def k(out):
+        out[0] = 1 if CONSTANTS.PY_TWO else 0
+        out[1] = 1 if CONSTANTS.NP_TWO else 0
+        out[2] = 1 if CONSTANTS.PY_HALF else 0
+        out[3] = 1 if CONSTANTS.NP_HALF else 0
+        out[4] = 1 if CONSTANTS.NP_ZERO else 0
+
+    out = cuda.to_device(np.zeros(5, dtype=np.int32))
+    k[1, 1](out)
+    np.testing.assert_array_equal(out.copy_to_host(), [1, 1, 1, 1, 0])
 
 
 @pytest.mark.parametrize("dtype", [np.complex64, np.complex128], ids=["c64", "c128"])
